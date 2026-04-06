@@ -14,9 +14,6 @@ import joblib
 from keras.applications.resnet50 import ResNet50, preprocess_input
 from keras.preprocessing import image
 
-# ---------------------------------------------------------------------------
-# Параметры
-# ---------------------------------------------------------------------------
 MODEL_DIR = 'saved_model'
 IMG_SIZE  = (224, 224)
 
@@ -44,7 +41,7 @@ def build_cluster_map(pipeline):
         mask    = cluster_labels == cid
         subset  = original_labels[mask]
         unique, counts = np.unique(subset, return_counts=True)
-        cluster_map[int(cid)] = unique[np.argmax(counts)]  # самый частый класс
+        cluster_map[int(cid)] = unique[np.argmax(counts)] 
 
     return cluster_map
 
@@ -67,15 +64,12 @@ def predict_single(img_path: str, extractor, pipeline, cluster_map):
     относительно суммы всех расстояний (чем меньше расстояние, тем выше).
     """
     feat      = extract_features(img_path, extractor)
-    feat_2d   = feat.reshape(1, -1)                      # shape (1, 2048)
+    feat_2d   = feat.reshape(1, -1)                      
 
-    # pipeline.predict проводит feat через PCA, затем через KMeans
     cid       = int(pipeline.predict(feat_2d)[0])
 
-    # pipeline['kmeans'].transform даёт расстояния до всех центроидов
-    # доступ к шагу pipeline через имя шага
-    feat_pca  = pipeline['pca'].transform(feat_2d)       # (1, 50)
-    distances = pipeline['kmeans'].transform(feat_pca)[0] # (n_clusters,)
+    feat_pca  = pipeline['pca'].transform(feat_2d)      
+    distances = pipeline['kmeans'].transform(feat_pca)[0] 
     confidence = (1 - distances[cid] / distances.sum()) * 100
 
     return cid, cluster_map.get(cid, f"Cluster {cid}"), confidence
@@ -88,7 +82,6 @@ def main():
 
     path = sys.argv[1]
 
-    # Загрузка моделей
     print("Загрузка ResNet50...")
     extractor = ResNet50(weights='imagenet', include_top=False, pooling='avg')
 
@@ -97,7 +90,6 @@ def main():
     cluster_map = build_cluster_map(pipeline)
     print(f"Маппинг кластеров: {cluster_map}\n")
 
-    # Сбор файлов
     if os.path.isdir(path):
         files = [
             os.path.join(path, f) for f in os.listdir(path)
@@ -110,7 +102,6 @@ def main():
         print("Изображения не найдены.")
         sys.exit(1)
 
-    # Вывод результатов в виде таблицы
     print(f"{'Файл':<42} {'Кластер':>8} {'Класс':<14} {'Уверенность':>12}")
     print("-" * 78)
 
