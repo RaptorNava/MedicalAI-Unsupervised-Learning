@@ -1,53 +1,33 @@
-# unsupervised_chest-xray
+#  Chest X-Ray Clustering (Unsupervised Learning)
 
-Unsupervised clustering of chest X-ray images.  
-Pipeline: **ResNet50 (feature extractor) -> PCA -> KMeans**
+This project implements an unsupervised machine learning pipeline to automatically group chest X-ray images into categories (e.g., "Normal" vs. "Pneumonia") without using any ground-truth labels during the training phase. It leverages Deep Learning for feature extraction and Classical ML for dimensionality reduction and clustering.
 
-## Dataset
-[Chest X-Ray Images (Pneumonia)](https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia)  
-Classes: `NORMAL` / `PNEUMONIA`
+---
 
-## Project structure
-```
+##  How It Works (The Pipeline)
+
+The system processes images through a three-stage pipeline:
+
+1.  **Feature Extraction (ResNet50):** Each image is passed through a ResNet50 model (pre-trained on ImageNet). The final classification layer is removed, and Global Average Pooling is applied to transform each image into a **2048-dimensional feature vector**.
+2.  **Dimensionality Reduction (PCA):** To handle the "curse of dimensionality" and remove noise, Principal Component Analysis (PCA) compresses the 2048 features into the **50 most significant principal components**.
+3.  **Clustering (K-Means):** The K-Means algorithm (k=2) analyzes the 50-D vectors to find two distinct clusters based purely on visual patterns and mathematical similarity.
+
+The PCA and K-Means steps are encapsulated within a single `sklearn.pipeline.Pipeline` object for seamless inference.
+
+---
+
+##  Project Structure
+
+```text
 unsupervised_chest-xray/
-├── data/raw/
-│   ├── NORMAL/
-│   └── PNEUMONIA/
-├── saved_model/            # created after running train.py
-│   ├── pipeline.pkl        # single model file: PCA + KMeans
-│   ├── features_2d.npy     # 2-D projections for visualization
-│   ├── cluster_labels.npy
-│   ├── original_labels.npy
-│   └── clustering_plot.png
-├── train.py
-├── predict.py
-├── app.py
-├── requirements.txt
-└── README.md
-```
-
-## Quick start
-
-```bash
-pip install -r requirements.txt
-
-# 1. Train and save the model
-python train.py
-
-# 2. Predict from terminal (single file or folder)
-python predict.py data/raw/NORMAL/IM-0001-0001.jpeg
-python predict.py data/raw/PNEUMONIA/
-
-# 3. Run web app
-streamlit run app.py
-```
-
-## How it works
-
-1. **ResNet50** extracts a 2048-dimensional feature vector from each image.  
-   The classification head is removed; only convolutional features are used.
-2. **PCA** compresses 2048 dimensions to 50, removing noise and speeding up clustering.
-3. **KMeans** (k=2) groups images into two clusters without seeing any labels.
-
-Steps 2 and 3 are wrapped in a single `sklearn.pipeline.Pipeline` object
-and saved as `pipeline.pkl` with `joblib`.
+├── data/raw/              # Input images (subfolders: NORMAL / PNEUMONIA)
+├── saved_model/           # Artifacts generated after training
+│   ├── pipeline.pkl       # CORE MODEL: Serialized PCA + KMeans pipeline
+│   ├── clustering_plot.png # Visual validation of cluster separation
+│   ├── original_labels.npy # Real labels used for post-train mapping
+│   ├── features_2d.npy    # 2D projections for the plot
+│   └── cluster_labels.npy # Cluster assignments for training data
+├── train.py               # Main script for feature extraction and training
+├── predict.py             # CLI tool for testing new images
+├── app.py                 # Streamlit-based Web UI
+└── requirements.txt       # Python dependencies
